@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI助手 - 无畏契约电竞平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#111827}::-webkit-scrollbar-thumb{background:#374151;border-radius:3px}#chat-msg::-webkit-scrollbar{width:4px}</style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+<nav class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4"><div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-8">
+            <a href="/" class="text-xl font-bold"><span class="text-red-500">●</span> 无畏契约电竞</a>
+            <div class="hidden md:flex space-x-1">
+                <a href="/teams" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-shield-halved mr-2"></i>战队</a>
+                <a href="/players" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-users mr-2"></i>选手</a>
+                <a href="/chat" class="px-4 py-2 rounded-lg text-sm bg-red-600 text-white"><i class="fas fa-robot mr-2"></i>AI助手</a>
+            </div>
+        </div>
+    </div></div>
+</nav>
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold flex items-center"><i class="fas fa-robot text-red-500 mr-3"></i>AI 助手</h1>
+        <p class="text-gray-400 mt-2">问问关于无畏契约战队和选手的问题</p>
+    </div>
+    <div class="bg-gray-900 rounded-2xl border border-gray-800 h-[600px] flex flex-col">
+        <div id="chat-msg" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <div class="flex items-start space-x-3 fade-in">
+                <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-robot text-sm"></i></div>
+                <div class="bg-gray-800 rounded-2xl rounded-tl-none px-5 py-3 max-w-[80%]"><p class="text-gray-300 text-sm leading-relaxed">你好！我是无畏契约电竞助手，可以回答关于战队和选手的问题。试试问我：<br><br>"有哪些中国战队？"<br>"EDG战队的信息"<br>"ZmjjKK选手的数据"</p></div>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 p-4">
+            <div class="flex space-x-3">
+                <input id="chat-input" type="text" placeholder="输入你的问题..." class="flex-1 bg-gray-800 rounded-xl px-5 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 border border-gray-700">
+                <button id="chat-send" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center"><i class="fas fa-paper-plane mr-2"></i>发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+var msgDiv = document.getElementById("chat-msg");
+var inp = document.getElementById("chat-input");
+var btn = document.getElementById("chat-send");
+function addMsg(role, text) {
+    var d = document.createElement("div");
+    d.className = "flex items-start space-x-3 fade-in " + (role === "user" ? "flex-row-reverse space-x-reverse" : "");
+    var avatar = document.createElement("div");
+    avatar.className = "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 " + (role === "user" ? "bg-blue-600" : "bg-red-600");
+    avatar.innerHTML = role === "user" ? "<i class="fas fa-user text-sm"></i>" : "<i class="fas fa-robot text-sm"></i>";
+    var bubble = document.createElement("div");
+    bubble.className = "rounded-2xl px-5 py-3 max-w-[80%] text-sm " + (role === "user" ? "bg-blue-900 rounded-tr-none" : "bg-gray-800 rounded-tl-none");
+    bubble.innerHTML = "<p class="text-gray-300 leading-relaxed">"+text.replace(/\n/g,"<br>")+"</p>";
+    d.appendChild(avatar);
+    d.appendChild(bubble);
+    msgDiv.appendChild(d);
+    msgDiv.scrollTop = msgDiv.scrollHeight;
+}
+async function sendMsg() {
+    var q = inp.value.trim();
+    if(!q) return;
+    addMsg("user", q);
+    inp.value = "";
+    var loading = document.createElement("div");
+    loading.className = "flex items-start space-x-3 fade-in";
+    loading.innerHTML = "<div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center flex-shrink-0"><i class="fas fa-robot text-sm"></i></div><div class="bg-gray-800 rounded-2xl rounded-tl-none px-5 py-3"><p class="text-gray-400 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>思考中...</p></div>";
+    msgDiv.appendChild(loading);
+    msgDiv.scrollTop = msgDiv.scrollHeight;
+    try {
+        var r = await fetch("/api/chat", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({question:q}) });
+        var d = await r.json();
+        loading.remove();
+        addMsg("ai", d.answer);
+    } catch(e) {
+        loading.remove();
+        addMsg("ai", "抱歉，暂时无法回答，请稍后再试。");
+    }
+}
+btn.addEventListener("click", sendMsg);
+inp.addEventListener("keypress", function(e){if(e.key==="Enter") sendMsg();});
+</script></body></html>

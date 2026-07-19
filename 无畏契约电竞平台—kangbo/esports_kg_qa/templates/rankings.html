@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排行榜 - VCT知识图谱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0f; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    </style>
+</head>
+<body class="text-white min-h-screen">
+    <nav class="bg-gray-900/90 border-b border-gray-800 sticky top-0 z-50 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <a href="/" class="text-xl font-bold"><span class="text-red-500">●</span> VCT 知识图谱</a>
+                <div class="hidden md:flex space-x-1">
+                    <a href="/" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-home mr-2"></i>首页</a>
+                    <a href="/qa" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-robot mr-2"></i>智能问答</a>
+                    <a href="/players" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-users mr-2"></i>选手数据</a>
+                    <a href="/rankings" class="px-4 py-2 rounded-lg text-sm bg-red-600 text-white"><i class="fas fa-trophy mr-2"></i>排行榜</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold mb-6"><i class="fas fa-trophy text-yellow-500 mr-3"></i>选手排行榜</h1>
+            <div class="flex flex-wrap gap-3">
+                <select id="sort-by" class="bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <option value="acs">按 ACS</option>
+                    <option value="rating">按 Rating</option>
+                    <option value="adr">按 ADR</option>
+                    <option value="kast">按 KAST%</option>
+                    <option value="kda">按 KDA</option>
+                    <option value="kills">按总击杀</option>
+                </select>
+                <select id="filter-team" class="bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <option value="">所有战队</option>
+                </select>
+                <select id="filter-region" class="bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <option value="">所有赛区</option>
+                    <option value="CN">CN</option>
+                    <option value="KR">KR</option>
+                    <option value="NA">NA</option>
+                    <option value="EMEA">EMEA</option>
+                    <option value="APAC">APAC</option>
+                    <option value="SA">SA</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-800 text-gray-400 text-sm uppercase">
+                            <th class="px-4 py-3 text-center w-12">#</th>
+                            <th class="px-4 py-3 text-left">选手</th>
+                            <th class="px-4 py-3 text-left">战队</th>
+                            <th class="px-4 py-3 text-center">ACS</th>
+                            <th class="px-4 py-3 text-center">Rating</th>
+                            <th class="px-4 py-3 text-center">ADR</th>
+                            <th class="px-4 py-3 text-center">KAST%</th>
+                            <th class="px-4 py-3 text-center">HS%</th>
+                            <th class="px-4 py-3 text-center">KDA</th>
+                            <th class="px-4 py-3 text-center">击杀</th>
+                            <th class="px-4 py-3 text-center">死亡</th>
+                            <th class="px-4 py-3 text-center">场次</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankings-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-4">
+            <span id="total-info" class="text-sm text-gray-500"></span>
+            <div class="flex space-x-2">
+                <button id="prev-page" class="px-4 py-2 rounded-lg text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled><i class="fas fa-chevron-left mr-1"></i>上一页</button>
+                <span id="page-info" class="px-4 py-2 text-sm text-gray-400"></span>
+                <button id="next-page" class="px-4 py-2 rounded-lg text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50"><i class="fas fa-chevron-right mr-1"></i>下一页</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 border-t border-gray-800 mt-12">
+        <div class="max-w-7xl mx-auto px-4 py-8 text-center text-gray-500 text-sm">
+            VCT 知识图谱问答系统 &mdash; Powered by Neo4j + Flask
+        </div>
+    </footer>
+
+    <script>
+    var currentPage = 1, totalPages = 1;
+    var sortBy = "acs", filterTeam = "", filterRegion = "";
+
+    async function loadFilters() {
+        try {
+            var data = await (await fetch("/api/filter_options")).json();
+            var teamSel = document.getElementById("filter-team");
+            teamSel.innerHTML = '<option value="">所有战队</option>' + data.teams.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join("");
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadRankings() {
+        try {
+            var params = "page="+currentPage+"&sort_by="+sortBy+"&team="+encodeURIComponent(filterTeam)+"&region="+encodeURIComponent(filterRegion);
+            var data = await (await fetch("/api/rankings?"+params)).json();
+            var tbody = document.getElementById("rankings-body");
+            tbody.innerHTML = data.data.map(function(r, i){
+                var rank = (currentPage-1)*50 + i + 1;
+                return '<tr class="border-b border-gray-800 hover:bg-gray-800/50 transition">'+
+                    '<td class="px-4 py-3 text-center"><span class="font-bold '+(rank<=3?'text-yellow-400':rank<=10?'text-gray-400':'text-gray-600')+'">'+rank+'</span></td>'+
+                    '<td class="px-4 py-3 font-medium">'+r.player+'</td>'+
+                    '<td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-gray-800 text-blue-400">'+r.team+'</span></td>'+
+                    '<td class="px-4 py-3 text-center font-bold text-green-400">'+r.avg_acs+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.avg_rating+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.avg_adr+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.avg_kast+'%</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.avg_hs+'%</td>'+
+                    '<td class="px-4 py-3 text-center font-semibold text-blue-400">'+r.kda+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.total_kills+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.total_deaths+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.match_count+'</td>'+
+                    '</tr>';
+            }).join("");
+            totalPages = data.total_pages;
+            document.getElementById("page-info").textContent = currentPage+"/"+totalPages;
+            document.getElementById("total-info").textContent = "共 "+data.total+" 名选手";
+            document.getElementById("prev-page").disabled = currentPage <= 1;
+            document.getElementById("next-page").disabled = currentPage >= totalPages;
+        } catch(e) { console.error(e); }
+    }
+
+    document.getElementById("sort-by").addEventListener("change", function(){
+        sortBy = this.value; currentPage = 1; loadRankings();
+    });
+    document.getElementById("filter-team").addEventListener("change", function(){
+        filterTeam = this.value; currentPage = 1; loadRankings();
+    });
+    document.getElementById("filter-region").addEventListener("change", function(){
+        filterRegion = this.value; currentPage = 1; loadRankings();
+    });
+    document.getElementById("prev-page").addEventListener("click", function(){
+        if(currentPage > 1) { currentPage--; loadRankings(); }
+    });
+    document.getElementById("next-page").addEventListener("click", function(){
+        if(currentPage < totalPages) { currentPage++; loadRankings(); }
+    });
+
+    loadFilters();
+    loadRankings();
+    </script>
+</body>
+</html>

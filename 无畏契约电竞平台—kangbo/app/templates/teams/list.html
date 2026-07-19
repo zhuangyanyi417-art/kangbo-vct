@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>战队列表 - 无畏契约电竞平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#111827}::-webkit-scrollbar-thumb{background:#374151;border-radius:3px}.card-hover:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.3)}</style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+<nav class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-8">
+                <a href="/" class="text-xl font-bold"><span class="text-red-500">●</span> 无畏契约电竞</a>
+                <div class="hidden md:flex space-x-1">
+                    <a href="/teams" class="px-4 py-2 rounded-lg text-sm bg-red-600 text-white"><i class="fas fa-shield-halved mr-2"></i>战队</a>
+                    <a href="/players" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-users mr-2"></i>选手</a>
+                    <a href="/chat" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-robot mr-2"></i>AI助手</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-6 flex items-center"><i class="fas fa-shield-halved text-red-500 mr-3"></i>战队列表</h1>
+        <div class="flex flex-wrap gap-2" id="region-filters">
+            <button data-region="" class="px-4 py-2 rounded-full text-sm bg-red-600 text-white hover:bg-red-700 transition">全部</button>
+            <button data-region="CN" class="px-4 py-2 rounded-full text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">中国</button>
+            <button data-region="KR" class="px-4 py-2 rounded-full text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">韩国</button>
+            <button data-region="NA" class="px-4 py-2 rounded-full text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">北美</button>
+            <button data-region="EMEA" class="px-4 py-2 rounded-full text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">欧洲</button>
+            <button data-region="APAC" class="px-4 py-2 rounded-full text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">亚太</button>
+            <button data-region="SA" class="px-4 py-2 rounded-full text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">南美</button>
+        </div>
+    </div>
+    <div id="teams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+</div>
+<footer class="bg-gray-900 border-t border-gray-800 mt-12"><div class="max-w-7xl mx-auto px-4 py-8 text-center text-gray-500 text-sm">无畏契约电竞平台 &mdash; MVP v1.0</div></footer>
+<script>
+var curReg = "";
+function loadTeams(region) {
+    var url = region ? "/api/teams?region="+region : "/api/teams";
+    fetch(url).then(function(r){return r.json();}).then(function(data){
+        var g = document.getElementById("teams-grid");
+        g.innerHTML = data.teams.map(function(t){
+            return '<a href="/teams/'+t.id+'" class="block bg-gray-900 rounded-xl p-5 hover:bg-gray-800 transition-all border border-gray-800 card-hover"><div class="flex items-center space-x-4 mb-4"><div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">'+t.name[0]+'</div><div><div class="text-lg font-bold">'+t.name+'</div><span class="inline-block px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-400 mt-1">'+t.region+'</span></div></div><div class="text-sm text-gray-400 mb-3">'+(t.description||"")+'</div><div class="flex justify-between text-sm pt-3 border-t border-gray-800"><span class="text-green-400 font-semibold">'+t.win_rate+'% 胜率</span><span class="text-gray-500">'+t.wins+'胜 '+t.losses+'负</span></div></a>';
+        }).join("");
+    }).catch(function(e){ console.error("战队加载失败", e); });
+}
+document.getElementById("region-filters").addEventListener("click", function(e){
+    var btn = e.target.closest("button");
+    if(!btn) return;
+    document.querySelectorAll("#region-filters button").forEach(function(b){b.className="px-4 py-2 rounded-full text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition";});
+    btn.className = "px-4 py-2 rounded-full text-sm bg-red-600 text-white hover:bg-red-700 transition";
+    curReg = btn.dataset.region;
+    loadTeams(curReg);
+});
+loadTeams("");
+</script>
+</body></html>

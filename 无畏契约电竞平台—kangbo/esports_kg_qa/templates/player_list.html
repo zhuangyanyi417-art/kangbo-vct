@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选手数据 - VCT知识图谱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0f; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        table { font-size: 0.9rem; }
+        th { position: sticky; top: 0; background: #1f2937; z-index: 10; }
+    </style>
+</head>
+<body class="text-white min-h-screen">
+    <nav class="bg-gray-900/90 border-b border-gray-800 sticky top-0 z-50 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <a href="/" class="text-xl font-bold"><span class="text-red-500">●</span> VCT 知识图谱</a>
+                <div class="hidden md:flex space-x-1">
+                    <a href="/" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-home mr-2"></i>首页</a>
+                    <a href="/qa" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-robot mr-2"></i>智能问答</a>
+                    <a href="/players" class="px-4 py-2 rounded-lg text-sm bg-red-600 text-white"><i class="fas fa-users mr-2"></i>选手数据</a>
+                    <a href="/rankings" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-gray-800"><i class="fas fa-trophy mr-2"></i>排行榜</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold mb-6"><i class="fas fa-users text-red-500 mr-3"></i>选手比赛数据</h1>
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-3 mb-4">
+                <select id="filter-team" class="bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <option value="">所有战队</option>
+                </select>
+                <select id="filter-player" class="bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <option value="">所有选手</option>
+                </select>
+                <input id="search-input" type="text" placeholder="搜索..." class="bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex-1 min-w-[200px]">
+            </div>
+            <!-- Table -->
+            <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-800 text-gray-400 text-sm uppercase">
+                                <th class="px-4 py-3 text-left">选手</th>
+                                <th class="px-4 py-3 text-left">战队</th>
+                                <th class="px-4 py-3 text-left">对手</th>
+                                <th class="px-4 py-3 text-center">ACS</th>
+                                <th class="px-4 py-3 text-center">K</th>
+                                <th class="px-4 py-3 text-center">D</th>
+                                <th class="px-4 py-3 text-center">A</th>
+                                <th class="px-4 py-3 text-center">KAST%</th>
+                                <th class="px-4 py-3 text-center">ADR</th>
+                                <th class="px-4 py-3 text-center">HS%</th>
+                                <th class="px-4 py-3 text-center">Rating</th>
+                                <th class="px-4 py-3 text-left">地图</th>
+                                <th class="px-4 py-3 text-left">英雄</th>
+                            </tr>
+                        </thead>
+                        <tbody id="players-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Pagination -->
+            <div class="flex items-center justify-between mt-4">
+                <span id="total-info" class="text-sm text-gray-500"></span>
+                <div class="flex space-x-2">
+                    <button id="prev-page" class="px-4 py-2 rounded-lg text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50" disabled><i class="fas fa-chevron-left mr-1"></i>上一页</button>
+                    <span id="page-info" class="px-4 py-2 text-sm text-gray-400"></span>
+                    <button id="next-page" class="px-4 py-2 rounded-lg text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50"><i class="fas fa-chevron-right mr-1"></i>下一页</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 border-t border-gray-800 mt-12">
+        <div class="max-w-7xl mx-auto px-4 py-8 text-center text-gray-500 text-sm">
+            VCT 知识图谱问答系统 &mdash; Powered by Neo4j + Flask
+        </div>
+    </footer>
+
+    <script>
+    var currentPage = 1;
+    var totalPages = 1;
+    var filterTeam = "", filterPlayer = "", searchQuery = "";
+
+    async function loadFilters() {
+        try {
+            var data = await (await fetch("/api/filter_options")).json();
+            var teamSel = document.getElementById("filter-team");
+            teamSel.innerHTML = '<option value="">所有战队</option>' + data.teams.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join("");
+            var playerSel = document.getElementById("filter-player");
+            playerSel.innerHTML = '<option value="">所有选手</option>' + data.players.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join("");
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadPlayers() {
+        try {
+            var params = "page="+currentPage+"&team="+encodeURIComponent(filterTeam)+"&player="+encodeURIComponent(filterPlayer)+"&search="+encodeURIComponent(searchQuery);
+            var data = await (await fetch("/api/players?"+params)).json();
+            var tbody = document.getElementById("players-table-body");
+            tbody.innerHTML = data.data.map(function(r){
+                return '<tr class="border-b border-gray-800 hover:bg-gray-800/50 transition">'+
+                    '<td class="px-4 py-3 font-medium">'+r.player+'</td>'+
+                    '<td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-gray-800 text-blue-400">'+r.team+'</span></td>'+
+                    '<td class="px-4 py-3 text-gray-400">'+r.opponent+'</td>'+
+                    '<td class="px-4 py-3 text-center font-bold text-green-400">'+r.acs+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.kill+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.death+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.assist+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r['kast%']+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.adr+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r['hs%']+'</td>'+
+                    '<td class="px-4 py-3 text-center">'+r.rating+'</td>'+
+                    '<td class="px-4 py-3 text-gray-400">'+r.map+'</td>'+
+                    '<td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-xs bg-gray-800 text-purple-400">'+r.agent+'</span></td>'+
+                    '</tr>';
+            }).join("");
+            totalPages = data.total_pages;
+            document.getElementById("page-info").textContent = currentPage+"/"+totalPages;
+            document.getElementById("total-info").textContent = "共 "+data.total+" 条记录";
+            document.getElementById("prev-page").disabled = currentPage <= 1;
+            document.getElementById("next-page").disabled = currentPage >= totalPages;
+        } catch(e) { console.error(e); }
+    }
+
+    document.getElementById("filter-team").addEventListener("change", function(){
+        filterTeam = this.value; currentPage = 1; loadPlayers();
+    });
+    document.getElementById("filter-player").addEventListener("change", function(){
+        filterPlayer = this.value; currentPage = 1; loadPlayers();
+    });
+    document.getElementById("search-input").addEventListener("input", function(){
+        searchQuery = this.value; currentPage = 1; loadPlayers();
+    });
+    document.getElementById("prev-page").addEventListener("click", function(){
+        if(currentPage > 1) { currentPage--; loadPlayers(); }
+    });
+    document.getElementById("next-page").addEventListener("click", function(){
+        if(currentPage < totalPages) { currentPage++; loadPlayers(); }
+    });
+
+    loadFilters();
+    loadPlayers();
+    </script>
+</body>
+</html>
